@@ -284,6 +284,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **code:** fix two `CodeAwareCompressor` AST-reassembly bugs: an exported JS/TS function or class (`export function foo() {`) produced a duplicated `export export` keyword and invalid syntax, because line-based node slicing (used to preserve indentation) pulled in the preceding `export` sibling's text on top of the `export_statement` handler's own prefix reconstruction. Separately, in every supported language, a doc comment immediately above a top-level function, class, or type was detached from its declaration during extraction and re-emitted in a cluster at the end of the compressed output instead of staying attached to what it documents.
 - * **proxy:** Buffered upstream responses containing a `server_tool_use` (or any other unrecognized Anthropic content block) no longer turn a fully-generated response into an HTTP 502. `StreamingMixin._response_to_sse` raised `ValueError` on unknown block types after the entire upstream generation had already been buffered, so a slow-but-successful response failed and the client retried the whole multi-minute request. Unknown blocks are now emitted verbatim in `content_block_start` (following the existing redacted_thinking` pattern), so `server_tool_use`, `server_tool_result`, `mcp_tool_use`, and future block types round-trip ([#1806](https://github.com/headroomlabs-ai/headroom/issues/1806)).
 
+## [0.35.0](https://github.com/zcb617/headroom/compare/v0.34.0...v0.35.0) (2026-08-06)
+
+
+### Features
+
+* **beacon:** allowlist the routing summary key ([#2818](https://github.com/zcb617/headroom/issues/2818)) ([7940c05](https://github.com/zcb617/headroom/commit/7940c05ebf4486c6b9d00984067ae33cedf4dddb))
+* **cli,pricing:** add CLI extension seam and prompt-cache TTL pricing ([#2802](https://github.com/zcb617/headroom/issues/2802)) ([6ec3e34](https://github.com/zcb617/headroom/commit/6ec3e3478abf058fe1460f91342bcdadf54a1ba8))
+
+
+### Bug Fixes
+
+* **beacon:** report all-layers savings, not context-compression only ([#2796](https://github.com/zcb617/headroom/issues/2796)) ([e9a24f3](https://github.com/zcb617/headroom/commit/e9a24f3ec1ffd278b0b3ca547a90942c40c99ec8))
+* **beacon:** split session failures by status code ([#2815](https://github.com/zcb617/headroom/issues/2815)) ([2954e37](https://github.com/zcb617/headroom/commit/2954e37048f8dcffe16e1c37b8f71afb0094a0a2))
+* **ccr:** preserve exact SQLite TTL boundary ([#2669](https://github.com/zcb617/headroom/issues/2669)) ([d0a86d4](https://github.com/zcb617/headroom/commit/d0a86d409fab377f9c642d1f3680b6ece7f97b8a))
+* **deps:** enforce audited transitive dependency floors ([#2791](https://github.com/zcb617/headroom/issues/2791)) ([64e2039](https://github.com/zcb617/headroom/commit/64e203931b9810e5a010f063d26d154419016f86))
+* emit SSE ping before message_start on Bedrock streaming path (issue [#902](https://github.com/zcb617/headroom/issues/902)) ([#1080](https://github.com/zcb617/headroom/issues/1080)) ([4dab254](https://github.com/zcb617/headroom/commit/4dab254d52914c39ffe13071848604e1771b1bd1))
+* **litellm:** add async_post_call_success_hook to HeadroomCallback ([#1322](https://github.com/zcb617/headroom/issues/1322)) ([3107994](https://github.com/zcb617/headroom/commit/3107994aed5fd42e713d3c26f3f08121a62b980e))
+* **proxy:** enable tool search by default and repair poisoned transcripts ([#2807](https://github.com/zcb617/headroom/issues/2807)) ([0237cbf](https://github.com/zcb617/headroom/commit/0237cbffbbc456ad8a7398005602d76881862d99))
+* **proxy:** graceful shutdown and reliable Ctrl+C exit ([#621](https://github.com/zcb617/headroom/issues/621)) ([17cdb18](https://github.com/zcb617/headroom/commit/17cdb185bc79d8cfec104e781a7e555af3ef11e1))
+* **proxy:** unwrap Hermes tool_call bridge in tool name map ([#2717](https://github.com/zcb617/headroom/issues/2717)) ([a97b824](https://github.com/zcb617/headroom/commit/a97b82413bdc86655c064417ed4628ff4d9d7c9d))
+* **tokenizer:** coerce non-string tool_call fields before counting ([#2801](https://github.com/zcb617/headroom/issues/2801)) ([b6f9877](https://github.com/zcb617/headroom/commit/b6f9877c78b3fa3b1d705426bd27d74be77f4fa0))
+
+
+### Dependencies
+
+* bump brace-expansion from 5.0.7 to 5.0.9 in /docs ([#2751](https://github.com/zcb617/headroom/issues/2751)) ([56ee57b](https://github.com/zcb617/headroom/commit/56ee57be98bf109f0a46de522724ef169a4bc51c))
+* bump next from 16.2.10 to 16.3.0 in /docs ([#2750](https://github.com/zcb617/headroom/issues/2750)) ([0fd0b99](https://github.com/zcb617/headroom/commit/0fd0b996a4b58a166491b145f4d3885c21b27cc0))
+* bump postcss from 8.5.19 to 8.5.25 in /plugins/openclaw ([#2749](https://github.com/zcb617/headroom/issues/2749)) ([cd60ee9](https://github.com/zcb617/headroom/commit/cd60ee9ae886b32ba5da3203e35bb6b088031fd3))
+* bump postcss from 8.5.19 to 8.5.25 in /plugins/opencode ([#2748](https://github.com/zcb617/headroom/issues/2748)) ([ff4e016](https://github.com/zcb617/headroom/commit/ff4e0167bbccbd4ae51bf23ddec144e61c94cd68))
+* bump postcss from 8.5.19 to 8.5.25 in /sdk/typescript ([#2747](https://github.com/zcb617/headroom/issues/2747)) ([267c2bd](https://github.com/zcb617/headroom/commit/267c2bdcb56e132b2dd9c065dab3498dbf730ca3))
+
 ## [0.34.0](https://github.com/headroomlabs-ai/headroom/compare/v0.33.0...v0.34.0) (2026-08-05)
 
 
