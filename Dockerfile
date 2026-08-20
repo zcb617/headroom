@@ -10,13 +10,20 @@ ARG UV_VERSION
 ARG PYTHON_SITE_PACKAGES
 ARG HEADROOM_BUILD_VERSION=""
 
+ARG PYPI_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
+ENV PIP_INDEX_URL=${PYPI_INDEX_URL} \
+    UV_INDEX_URL=${PYPI_INDEX_URL}
+
 # build-essential / g++ for any C extension wheels uv may need to build
 # from source. curl + ca-certificates are required by the rustup
 # bootstrap below. patchelf for maturin's wheel-link repair on linux.
 # No OpenSSL system deps required: the rustls-everywhere refactor
 # eliminated `openssl-sys` from our build tree by switching fastembed
 # to `hf-hub-rustls-tls` + `ort-download-binaries-rustls-tls`.
-RUN apt-get update && \
+# Use the Tsinghua Debian mirror to speed up package installation in China.
+RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g; s|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+      /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list 2>/dev/null || true; \
+  apt-get update && \
   apt-get install -y --no-install-recommends \
     build-essential \
     g++ \
@@ -37,6 +44,16 @@ ENV CARGO_HOME=/usr/local/cargo \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
       | sh -s -- -y --no-modify-path --profile minimal -c rustfmt -c clippy --default-toolchain 1.95.0
 
+# Use a faster Rust crates registry mirror for Cargo dependency resolution.
+RUN mkdir -p /usr/local/cargo && \
+    printf '%s\n' \
+      '[source.crates-io]' \
+      'replace-with = "rsproxy"' \
+      '' \
+      '[source.rsproxy]' \
+      'registry = "sparse+https://rsproxy.cn/index/"' \
+      > /usr/local/cargo/config.toml
+
 WORKDIR /build
 
 # Copy the full set of files maturin needs to build the wheel: the root
@@ -47,10 +64,7 @@ COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY crates/ crates/
 COPY headroom/ headroom/
 
-# The standalone Dockerfile must support every backend advertised by
-# `headroom proxy --backend`, including Bedrock temporary/SSO credentials.
-# Those credentials require botocore (GH #1551), supplied by [bedrock].
-ARG HEADROOM_EXTRAS=proxy,code,bedrock
+ARG HEADROOM_EXTRAS=proxy,code,ml,mcp
 RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
@@ -163,8 +177,13 @@ ARG RUNTIME_USER=nonroot
 ARG RUNTIME_HOME=/home/nonroot
 ARG PYTHON_SITE_PACKAGES
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl && \
+# Kompress/Triton may compile runtime kernels in the final image.
+RUN sed -i 's|deb.debian.org|mirrors.tuna.tsinghua.edu.cn|g; s|security.debian.org|mirrors.tuna.tsinghua.edu.cn|g' \
+    /etc/apt/sources.list.d/debian.sources /etc/apt/sources.list 2>/dev/null || true; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder ${PYTHON_SITE_PACKAGES} ${PYTHON_SITE_PACKAGES}
